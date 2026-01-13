@@ -1,0 +1,152 @@
+==============================================================
+🤖 ARCHITETTURA ROBOT INTELLIGENTE IBRIDO
+Raspberry Pi + ESP32
+==============================================================
+
+📌 OBIETTIVO
+Sistema robotico con ChatGPT, voce naturale, memoria estesa e controllo fisico.
+Il Raspberry è il "cervello", l'ESP32 è la "testa" (voce e sensi locali).
+
+--------------------------------------------------------------
+🧠 RASPBERRY PI (CERVELLO LOGICO)
+--------------------------------------------------------------
+RUOLO:
+ - Gestisce la conversazione con OpenAI / ChatGPT.
+ - Interpreta gli ordini vocali o testuali.
+ - Decide le azioni da compiere.
+ - Comanda l’ESP32 per far parlare e muovere la testa.
+ - Controlla direttamente i servo/motori del corpo.
+ - Salva memoria, log, immagini e preferenze su USB.
+
+COMPITI PRINCIPALI:
+ - Input: microfono, tastiera o sensori.
+ - Elaborazione: analisi testo e chiamata API OpenAI.
+ - Output: invio comandi a ESP32 (voce / LED / espressioni).
+ - Controllo servo via GPIO o PCA9685.
+ - Memoria in JSON o SQLite su chiavetta USB.
+
+ESEMPIO COMUNICAZIONE CON OPENAI (Python):
+------------------------------------------
+openai.ChatCompletion.create(
+   model="gpt-3.5-turbo",
+   messages=[{"role": "user", "content": "Ciao"}]
+)
+
+ESEMPIO INVIO COMANDO A ESP32:
+------------------------------
+ser.write(b"TALK:Ciao, come stai?\n")
+ser.write(b"LED:SMILE\n")
+ser.write(b"SERVO_EYE:45\n")
+
+--------------------------------------------------------------
+🗣️ ESP32 (TESTA / VOCE / SENSORI LOCALI)
+--------------------------------------------------------------
+RUOLO:
+ - Riceve comandi dal Raspberry.
+ - Esegue il Text-to-Speech e parla tramite speaker.
+ - Gestisce LED, servo piccoli (occhi, bocca, mimica).
+ - Può inviare indietro conferme (“OK”, “parlato finito”).
+
+FUNZIONI BASE:
+ - TALK:<testo>   → pronuncia il testo (Google TTS).
+ - LED:<azione>   → accende o spegne espressioni luminose.
+ - SERVO_EYE:<angolo> → muove servo dell’occhio o testa.
+
+PSEUDOCODICE BASE:
+------------------
+if (Serial.available()) {
+   String cmd = Serial.readStringUntil('\n');
+   if (cmd.startsWith("TALK:")) playLongText(cmd.substring(5));
+   else if (cmd.startsWith("LED:")) gestisciLED(cmd.substring(4));
+   else if (cmd.startsWith("SERVO_EYE:")) muoviServo(cmd.substring(10).toInt());
+}
+
+--------------------------------------------------------------
+🧩 COMUNICAZIONE RASPBERRY ↔ ESP32
+--------------------------------------------------------------
+Tipi di collegamento possibili:
+1. 🔌 Seriale USB  → consigliato per iniziare (stabile, semplice)
+2. 🌐 Wi-Fi MQTT   → per più moduli (testa, braccia, sensori)
+3. 🔊 WebSocket    → per comunicazione in tempo reale (avanzato)
+
+Protocollo base (testuale):
+---------------------------
+TALK:<stringa di testo>
+LED:<azione>
+SERVO_<parte>:<valore>
+ACK:<messaggio di risposta>
+
+--------------------------------------------------------------
+💾 MEMORIA ESTESA (SU RASPBERRY)
+--------------------------------------------------------------
+Struttura consigliata su USB:
+-----------------------------
+/memoria/
+ ├── conversazioni.json   → log chat
+ ├── persone/             → volti riconosciuti
+ ├── immagini/            → contesto visivo
+ ├── preferenze.json      → dati personali
+ └── log/                 → attività varie
+
+Esempio JSON memoria:
+---------------------
+{
+  "ultimo_saluto": "Ciao Luca!",
+  "umore": "felice",
+  "azioni_recenti": ["parlato", "girato_testa"],
+  "persone_note": ["Luca", "Anna"]
+}
+
+--------------------------------------------------------------
+💡 COMPONENTI HARDWARE
+--------------------------------------------------------------
+🧠 Raspberry Pi (cervello)
+  - OS: Raspberry Pi OS Lite
+  - Librerie: Python, openai, gpiozero, pyaudio, opencv (facoltativo)
+  - Memoria USB per salvataggi
+  - Scheda servo PCA9685 (opzionale)
+
+🗣️ ESP32 (testa/voce)
+  - Collegato via USB o Wi-Fi al Raspberry
+  - Speaker I2S (DOUT=25, BCLK=33, LRC=32)
+  - Micro servo o LED RGB per espressioni
+
+--------------------------------------------------------------
+🎮 CICLO LOGICO DI FUNZIONAMENTO
+--------------------------------------------------------------
+1️⃣ Ascolta / riceve un comando vocale o testuale.
+2️⃣ Invia la frase a ChatGPT.
+3️⃣ Riceve la risposta testuale.
+4️⃣ Salva nel file di memoria (cronologia).
+5️⃣ Estrae la parte da pronunciare → manda a ESP32.
+6️⃣ Analizza eventuali istruzioni → muove servo sul Raspberry.
+7️⃣ Attende risposta dall’ESP32 (fine parlato).
+8️⃣ Pronto per nuovo comando.
+
+--------------------------------------------------------------
+🔋 VANTAGGI DELL’ARCHITETTURA IBRIDA
+--------------------------------------------------------------
+✅ Audio fluido e indipendente.
+✅ Raspberry libero per calcolo e IA.
+✅ Modulare (puoi aggiungere altre schede ESP32 per braccia, sensori).
+✅ Espandibile: visione artificiale, riconoscimento facciale, memoria estesa.
+✅ Sicura: ogni modulo ha compiti specifici.
+
+--------------------------------------------------------------
+🔮 ESTENSIONI FUTURE
+--------------------------------------------------------------
+- Speech-to-Text (microfono + Whisper / Google STT).
+- Visione (OpenCV / riconoscimento volti).
+- Memoria semantica (embeddings vettoriali).
+- MQTT per più ESP (testa, braccia, gambe).
+- Addestramento “personalità” con cronologia locale.
+
+==============================================================
+🧾 NOTE FINALI
+--------------------------------------------------------------
+• Raspberry = cervello / logica / memoria
+• ESP32     = voce / espressioni / sensoristica rapida
+• Comunicazione testuale semplice: TALK, LED, SERVO
+• Salvataggio ricordi e log su USB
+• Scalabile, stabile, “umanoide” nel comportamento
+==============================================================
