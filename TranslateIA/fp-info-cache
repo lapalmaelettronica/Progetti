@@ -1,4 +1,4 @@
-26227026224580150
+26228795341995586
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -69173,6 +69173,13 @@ I2C_LevelShifter 4-channel
 0
 12
 12
+LIB_Personale
+INMP441
+
+
+0
+6
+6
 LIB_Personale
 LM2896
 
