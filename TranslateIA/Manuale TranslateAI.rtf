@@ -1,0 +1,319 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;\f2\fswiss\fcharset0 Helvetica-Oblique;
+}
+{\colortbl;\red255\green255\blue255;\red109\green109\blue109;\red0\green0\blue0;\red109\green109\blue109;
+}
+{\*\expandedcolortbl;;\cssrgb\c50196\c50196\c50196;\cssrgb\c0\c0\c0;\cssrgb\c50196\c50196\c50196;
+}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid1\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid101\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{circle\}}{\leveltext\leveltemplateid102\'01\uc0\u9702 ;}{\levelnumbers;}\fi-360\li1440\lin1440 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}
+{\list\listtemplateid4\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid301\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid4}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \expnd0\expndtw0\kerning0
+\
+\pard\pardeftab720\sa321\partightenfactor0
+
+\f1\b\fs48 \cf0 GUIDA SETUP TOTALE: Traduttore Vocale Offline (Pi Zero 2)
+\f0\b0\fs24 \
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 Ecco il file di Setup 
+\f1\b Definitivo e Semplificato
+\f0\b0  (Ottimizzato per OS Legacy).
+\f1\b\fs48 \
+
+\fs24 Hardware:
+\f0\b0  Pi Zero 2 W + INMP441\
+
+\f1\b OS Consigliato:
+\f0\b0  Raspberry Pi OS 
+\f1\b Legacy
+\f0\b0  Lite (64-bit) -> 
+\f2\i Trovalo nel menu "OS Other" dell'Imager.
+\f0\i0 \
+\pard\pardeftab720\partightenfactor0
+\cf2 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 FASE 1: Preparazione SD (Da PC/Mac) \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 Quando usi 
+\f1\b Raspberry Pi Imager
+\f0\b0 , non scegliere la prima voce che capita.\
+Scegli questa versione specifica:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 {\listtext	1	}\expnd0\expndtw0\kerning0
+Clicca su 
+\f1\b "Raspberry Pi OS (other)"
+\f0\b0 .\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 {\listtext	2	}\expnd0\expndtw0\kerning0
+Scegli 
+\f1\b "Raspberry Pi OS (Legacy, 64-bit) Lite"
+\f0\b0  (Basato su 
+\f1\b Bullseye
+\f0\b0 ).\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b \cf0 PERCH\'c9?
+\f0\b0 \
+Questa versione ha Python 3.9 o 3.10. Per queste versioni, 
+\f1\b tutte le librerie (NumPy, CTranslate2) esistono gi\'e0 pronte
+\f0\b0 .\
+Significa che 
+\f1\b NON dovrai compilare nulla
+\f0\b0 . L'installazione durer\'e0 
+\f1\b 5 minuti
+\f0\b0  invece di 2 ore. Niente make, niente cmake, niente crash.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls2\ilvl0
+\f1\b \cf0 \kerning1\expnd0\expndtw0 {\listtext	1	}\expnd0\expndtw0\kerning0
+Impostazioni (Ingranaggio):
+\f0\b0 \
+\pard\tx940\tx1440\pardeftab720\li1440\fi-1440\sa240\partightenfactor0
+\ls2\ilvl1\cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+Hostname: nomeraspi\
+\ls2\ilvl1\kerning1\expnd0\expndtw0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+User/Pass: nomeutente / (tua password)\
+\ls2\ilvl1\kerning1\expnd0\expndtw0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+Wi-Fi: (tuo wifi)\
+\pard\tx940\tx1440\pardeftab720\li1440\fi-1440\sa240\partightenfactor0
+\ls2\ilvl1
+\f1\b \cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+SSH:
+\f0\b0  Abilitato.\
+\pard\pardeftab720\partightenfactor0
+\cf2 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 FASE 2: Preparazione "Anti-Crash" (SWAP) 
+\f0\b0\fs24 \outl0\strokewidth0 \strokec3 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 1. Preparazione Anti-Crash (SWAP) \uc0\u55357 \u57057 \u65039 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 Appena acceso e collegato in SSH:\
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+# Aggiorna il sistema\
+sudo apt update && sudo apt upgrade -y\
+\
+# Installa strumenti base\
+sudo apt install git python3-pip libopenblas-dev libatlas-base-dev screen -y\
+\
+# Aumenta la SWAP a 2GB (Sicurezza totale)\
+sudo nano /etc/dphys-swapfile\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls3\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Cambia: CONF_SWAPSIZE=2048 (togli il # se c'\'e8).\
+\ls3\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Salva (CTRL+O, Invio, CTRL+X).\
+\ls3\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Applica: sudo /etc/init.d/dphys-swapfile restart\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\i \cf0 (Verifica con free -h che la Swap sia 2.0Gi).
+\f0\i0 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \strokec4 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 \strokec3 2. Installazione Librerie (Metodo Veloce) \uc0\u9889 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 Se hai messo l'OS Legacy, questo passaggio sar\'e0 indolore.\
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+# Fix per processore (Illegal Instruction) - Permanente\
+echo "export OPENBLAS_CORETYPE=ARMV8" >> ~/.bashrc\
+source ~/.bashrc\
+\
+# Installa tutto (NumPy, Argos, ecc)\
+# Grazie all'OS Legacy, scaricher\'e0 i binari (ruote) senza compilare!\
+pip3 install "numpy<2.0.0" argostranslate librosa soundfile --no-cache-dir\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\i \cf0 (Se ti d\'e0 errore "externally managed", aggiungi --break-system-packages alla fine).
+\f0\i0 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \strokec4 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 \strokec3 3. Setup Whisper (Il Cervello Vocale) \uc0\u55358 \u56800 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 Questo rimane uguale ed \'e8 leggero da compilare.\
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+cd ~\
+git clone https://github.com/ggerganov/whisper.cpp.git\
+cd whisper.cpp\
+make  # Ci mette 10-15 min max\
+# Scarica il modello ottimizzato\
+./models/download-ggml-model.sh tiny-q5_1\
+\pard\pardeftab720\partightenfactor0
+\cf4 \strokec4 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 \strokec3 4. I Codici Python \uc0\u55357 \u56333 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 Crea i file col comando nano nomefile.py, incolla e salva.\
+\pard\pardeftab720\sa319\partightenfactor0
+
+\f1\b \cf0 \uc0\u55357 \u56516  installa_lingue.py (Scarica i dizionari)\
+\pard\pardeftab720\partightenfactor0
+
+\f0\b0 \cf0 Python\
+\
+from argostranslate import package\
+print("\uc0\u9203  Aggiornamento indici...")\
+package.update_package_index()\
+available_packages = package.get_available_packages()\
+# Aggiungi qui le lingue che ti servono\
+lingue = ["it", "en", "es", "fr", "de"] \
+\
+print(f"\uc0\u11015 \u65039   Cerco pacchetti per: \{lingue\}")\
+for p in available_packages:\
+    if p.from_code in lingue and p.to_code in lingue:\
+        print(f"\uc0\u55357 \u56550  Installazione: \{p.from_code\} -> \{p.to_code\} ...")\
+        p.install()\
+print("\uc0\u9989  Fatto!")\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\i \cf0 Lancia con:
+\f0\i0  python3 installa_lingue.py\
+\pard\pardeftab720\sa319\partightenfactor0
+
+\f1\b \cf0 \uc0\u55357 \u56516  ricevitore.py (Il Programma Principale)\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\i\b0 \cf0 Nota: Ho aggiornato il codice per essere pi\'f9 robusto sugli errori.
+\f0\i0 \
+\pard\pardeftab720\partightenfactor0
+\cf0 Python\
+\
+import serial, wave, os, subprocess, time, struct\
+import argostranslate.package, argostranslate.translate\
+\
+# --- CONFIGURAZIONE ---\
+SERIAL_PORT = '/dev/serial0'    \
+BAUD_RATE = 921600              \
+AUDIO_FILE = "temp_audio.wav"\
+WHISPER_DIR = "/home/palma01/whisper.cpp"\
+MODEL_PATH = f"\{WHISPER_DIR\}/models/ggml-tiny-q5_1.bin"\
+EXECUTABLE = f"\{WHISPER_DIR\}/build/bin/whisper-cli" \
+# Se build/bin non esiste, prova solo f"\{WHISPER_DIR\}/main" o f"\{WHISPER_DIR\}/whisper-cli" a seconda della versione\
+\
+SAMPLE_RATE = 16000; CHANNELS = 2; WIDTH = 2; SILENCE_LIMIT = 1.5      \
+SRC_LANG = "it"; TGT_LANG = "en" \
+\
+def calcola_volume(data):\
+    try:\
+        count = len(data) // 2\
+        shorts = struct.unpack(f'<\{count\}h', data)\
+        return max(abs(s) for s in shorts)\
+    except: return 0\
+\
+def trascrivi(filename, lingua):\
+    # Mappatura lingue per Whisper (es. 'zh' -> 'zh')\
+    cmd = [EXECUTABLE, "-m", MODEL_PATH, "-f", filename, "-nt", "-t", "4", "-l", lingua, "--no-timestamps"]\
+    try:\
+        res = subprocess.run(cmd, capture_output=True, text=True)\
+        return res.stdout.strip()\
+    except Exception as e: return f"Err Trascrizione: \{e\}"\
+\
+def traduci(testo, src, tgt):\
+    if src == tgt: return testo\
+    try: return argostranslate.translate.translate(testo, src, tgt)\
+    except Exception as e: return f"[Err Traduzione: \{e\}]"\
+\
+def main():\
+    global SRC_LANG, TGT_LANG\
+    print(f"--- \uc0\u55357 \u56960  SISTEMA PRONTO: \{SRC_LANG\}->\{TGT_LANG\} ---")\
+    \
+    try: \
+        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)\
+        ser.flushInput()\
+    except Exception as e: \
+        print(f"\uc0\u10060  Errore Seriale: \{e\}"); return\
+\
+    frames = []; recording = False; last_data_time = 0\
+    \
+    while True:\
+        if ser.in_waiting > 0:\
+            peek = ser.read(ser.in_waiting)\
+            \
+            # Controllo Comandi (Cambio Lingua)\
+            if len(peek) < 50 and b"CONF:" in peek:\
+                try:\
+                    cmd_str = peek.decode('utf-8', errors='ignore').strip()\
+                    if "CONF:" in cmd_str:\
+                        # Formato atteso: CONF:it>en\
+                        parti = cmd_str.split("CONF:")[1].split(">")\
+                        SRC_LANG = parti[0].strip(); TGT_LANG = parti[1].strip()\
+                        print(f"\uc0\u9989  Cambio Lingua: \{SRC_LANG\} -> \{TGT_LANG\}")\
+                        frames = []; recording = False; continue\
+                except: pass\
+\
+            # Logica Registrazione (VOX)\
+            vol = calcola_volume(peek)\
+            if not recording and vol > 500: # Soglia volume (aggiusta se serve)\
+                print(f"\uc0\u55356 \u57252  Rilevata voce (\{SRC_LANG\})..."); recording = True; frames = []\
+            \
+            if recording: \
+                frames.append(peek); last_data_time = time.time()\
+        else:\
+            # Silenzio -> Elabora\
+            if recording and (time.time() - last_data_time > SILENCE_LIMIT):\
+                print("\uc0\u9209 \u65039   Fine frase. Elaborazione...")\
+                recording = False\
+                if len(frames) < 5: continue # Ignora rumori brevissimi\
+\
+                # Salva Audio\
+                with wave.open(AUDIO_FILE, 'wb') as wf:\
+                    wf.setnchannels(CHANNELS); wf.setsampwidth(WIDTH); wf.setframerate(SAMPLE_RATE)\
+                    wf.writeframes(b''.join(frames))\
+                \
+                # Trascrivi\
+                orig = trascrivi(AUDIO_FILE, SRC_LANG)\
+                print(f"\uc0\u55357 \u56803 \u65039  [Udito]: \{orig\}")\
+                \
+                if len(orig) > 1:\
+                    # Traduci\
+                    trad = traduci(orig, SRC_LANG, TGT_LANG)\
+                    print(f"\uc0\u10024  [Tradotto]: \{trad\}")\
+                    \
+                    # Invia a ESP32\
+                    msg = f"TXT:\{trad\}\\n"\
+                    ser.write(msg.encode('utf-8'))\
+                else:\
+                    print("\uc0\u9888 \u65039  Audio non chiaro o vuoto.")\
+                \
+                ser.flushInput()\
+\
+if __name__ == "__main__": main()\
+\pard\pardeftab720\partightenfactor0
+\cf4 \strokec4 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 \strokec3 5. Verifica Finale e Pulizia \uc0\u55358 \u56825 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls4\ilvl0
+\f0\b0\fs24 \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Abilita la seriale (sudo raspi-config -> Interface -> Serial -> Login Shell NO, Hardware YES).\
+\ls4\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Riavvia.\
+\ls4\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	3	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Lancia: python3 ricevitore.py.\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 Quando tutto funziona, riporta la swap a 100 per non bruciare la SD (sudo nano /etc/dphys-swapfile).\
+}
