@@ -12,13 +12,12 @@ Il LED lampeggia. Per farlo apparire nell'elenco delle porte di Arduino IDE e po
 Guarda il LED: Se ha smesso di lampeggiare ed è fisso o spento, il chip è in attesa.
 Vai ora nel menu Tools -> Port. Dovrebbe essere apparsa una nuova porta. Selezionala.
 */
-
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <RF24.h>
-#include <math.h> // Serve per la funzione sin() del LED
+#include <math.h>
 
 // ==========================================
 // DEFINIZIONE PIN
@@ -32,10 +31,10 @@ Vai ora nel menu Tools -> Port. Dovrebbe essere apparsa una nuova porta. Selezio
 #define PIN_JOY_Y   2
 #define PIN_BATT    4
 
-#define NRF_CE      9
-#define NRF_CSN     10
-#define I2C_SDA     8
-#define I2C_SCL     18
+#define NRF_CE      14 
+#define NRF_CSN     10 
+#define I2C_SDA     8  
+#define I2C_SCL     9  
 
 // PIN LED RGB (Catodo Comune)
 #define PIN_LED_R   40
@@ -53,33 +52,31 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 // CONFIGURAZIONE RADIO NRF24L01
 // ==========================================
 RF24 radio(NRF_CE, NRF_CSN);
-const byte addressRemote[6] = "RMT01"; // Indirizzo Telecomando
-const byte addressRobot[6]  = "ROB01"; // Indirizzo Robot
+const byte addressRemote[6] = "RMT01";
+const byte addressRobot[6]  = "ROB01";
 
 // ==========================================
-// VARIABILI DI STATO E STRUTTURE DATI
+// VARIABILI DI STATO E LOGICA MENU
 // ==========================================
 bool robotPower = false;
-bool isShuttingDown = false; // Traccia la fase di spegnimento per il LED
+bool isShuttingDown = false;
 
-int currentScreen = 0;
-const int TOTAL_SCREENS = 4; // 0:Welcome, 1:Guida, 2:Audio, 3:Batteria
+// 0: Standby, 1: Config Guida, 2: Config Audio, 3: Cruscotto Operativo
+int currentScreen = 0; 
 
 int driveMode = 0; // 0 = Manuale, 1 = IA
-int audioMode = 0; // 0 = Mic Robot, 1 = Mic Telecomando (PTT)
+int audioMode = 0; // 0 = Mic Robot, 1 = PTT Telecomando
 
-// Struttura dati per il Joystick
 struct JoyData {
-  uint8_t cmdType = 1; // 1 = Dati Joystick
+  uint8_t cmdType = 1;
   int16_t x;
   int16_t y;
 };
 JoyData joyPacket;
 
-// Struttura dati per i Comandi di Sistema
 struct SysCommand {
-  uint8_t cmdType = 0; // 0 = Comando di sistema
-  uint8_t action;      // 1=ON, 2=SHUTDOWN_REQ, 3=FORCE_OFF
+  uint8_t cmdType = 0;
+  uint8_t action;      
 };
 SysCommand sysPacket;
 
@@ -89,39 +86,30 @@ SysCommand sysPacket;
 void setup() {
   Serial.begin(115200);
   
-  // Inizializzazione Pin Tasti (l'ESP32-S3 ha pull-up interni su tutti i pin)
   pinMode(PIN_ON_OFF, INPUT_PULLUP);
   pinMode(PIN_PTT, INPUT_PULLUP);
   pinMode(PIN_SX, INPUT_PULLUP);
   pinMode(PIN_OK, INPUT_PULLUP);
   pinMode(PIN_DX, INPUT_PULLUP);
 
-  // Inizializzazione Pin LED RGB
   pinMode(PIN_LED_R, OUTPUT);
   pinMode(PIN_LED_G, OUTPUT);
   pinMode(PIN_LED_B, OUTPUT);
 
-  // Inizializzazione I2C e Display
   Wire.begin(I2C_SDA, I2C_SCL);
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("OLED fallito"));
-    // Lampeggio rosso di errore critico se manca il display
-    while(true) {
-      setLEDColor(255, 0, 0); delay(200);
-      setLEDColor(0, 0, 0); delay(200);
-    }
+    while(true) { setLEDColor(255, 0, 0); delay(200); setLEDColor(0, 0, 0); delay(200); }
   }
   
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0, 20);
-  display.println("  TELECOMANDO ROBOT");
-  display.println("     Avvio in corso...");
+  display.println("   SISTEMA AVVIATO");
   display.display();
   delay(1500);
 
-  // Inizializzazione Radio NRF24
   if (!radio.begin()) {
     Serial.println(F("NRF24 fallito"));
   } else {
@@ -138,83 +126,101 @@ void setup() {
 void loop() {
   handleOnOffButton();
   
-  // Il menu è navigabile solo se non stiamo spegnendo il robot
   if (!isShuttingDown) {
     handleMenuButtons();
     updateDisplay();
   }
   
-  // Invia dati joystick solo se acceso, in schermata guida e modalità manuale
-  if (robotPower && currentScreen == 1 && driveMode == 0 && !isShuttingDown) {
+  // Invia comandi joystick solo se siamo nel cruscotto (finito setup) e in manuale
+  if (robotPower && currentScreen == 3 && driveMode == 0 && !isShuttingDown) {
     sendJoystickData();
   }
 
-  // Gestione PTT (Segnaposto per streaming audio WiFi)
   if (digitalRead(PIN_PTT) == LOW && robotPower) {
-    // Logica ESP-NOW / WiFi I2S andrà qui
-    Serial.println("PTT Premuto - In attesa di logica Audio");
+    Serial.println("PTT Premuto");
   }
 
   updateRGBLED();
-  delay(20); // Piccolo delay per stabilità ciclo (50Hz)
+  delay(20); 
 }
 
 // ==========================================
-// FUNZIONI DI GESTIONE LOGICA
+// GESTIONE PULSANTI E LOGICA
 // ==========================================
-
 void handleOnOffButton() {
   if (digitalRead(PIN_ON_OFF) == LOW) {
-    delay(50); // Anti-rimbalzo
+    delay(50); 
     if (digitalRead(PIN_ON_OFF) == LOW) {
-      
       if (!robotPower) {
-        // --- ACCENSIONE ---
-        sysPacket.action = 1; // ON
+        // Accensione: Forza l'ingresso nel Setup Wizard
+        sysPacket.action = 1; 
         radio.stopListening();
         radio.write(&sysPacket, sizeof(sysPacket));
         robotPower = true;
-        currentScreen = 1; // Salta alla guida
+        currentScreen = 1; // Inizia dalla configurazione guida
       } else {
-        // --- SPEGNIMENTO SICURO ---
         safeShutdownSequence();
       }
-      
-      // Aspetta che il tasto venga rilasciato per evitare doppi click
-      while(digitalRead(PIN_ON_OFF) == LOW) { 
-        updateRGBLED(); // Continua ad aggiornare il LED anche se tieni premuto
-        delay(10); 
-      } 
+      while(digitalRead(PIN_ON_OFF) == LOW) { updateRGBLED(); delay(10); } 
     }
   }
 }
 
-void safeShutdownSequence() {
-  isShuttingDown = true; // Attiva il lampeggio arancione sul LED
+void handleMenuButtons() {
+  // --- TASTO SX (Seleziona opzione 0) ---
+  if (digitalRead(PIN_SX) == LOW) {
+    if (currentScreen == 1) driveMode = 0; // Manuale
+    if (currentScreen == 2) audioMode = 0; // Mic Robot
+    while(digitalRead(PIN_SX) == LOW) { updateRGBLED(); delay(10); }
+  }
   
+  // --- TASTO DX (Seleziona opzione 1) ---
+  if (digitalRead(PIN_DX) == LOW) {
+    if (currentScreen == 1) driveMode = 1; // Autonoma
+    if (currentScreen == 2) audioMode = 1; // PTT Locale
+    while(digitalRead(PIN_DX) == LOW) { updateRGBLED(); delay(10); }
+  }
+  
+  // --- TASTO OK (Conferma e vai avanti) ---
+  if (digitalRead(PIN_OK) == LOW) {
+    if (currentScreen == 0) {
+      // Da standby, se preme OK senza accendere il robot
+      // fa finta di niente, o potresti forzare l'accensione.
+    } 
+    else if (currentScreen == 1) {
+      currentScreen = 2; // Passa ad Audio
+    } 
+    else if (currentScreen == 2) {
+      currentScreen = 3; // Passa al Cruscotto
+    } 
+    else if (currentScreen == 3) {
+      currentScreen = 1; // Ritorna al setup se vuole ricominciare
+    }
+    while(digitalRead(PIN_OK) == LOW) { updateRGBLED(); delay(10); }
+  }
+}
+
+void safeShutdownSequence() {
+  isShuttingDown = true; 
   display.clearDisplay();
-  display.setCursor(0, 10);
-  display.println("Spegnimento Pi 5...");
+  display.setCursor(0, 20);
+  display.println(" Spegnimento Pi 5...");
   display.display();
 
-  // 1. Invia richiesta di spegnimento
-  sysPacket.action = 2; // SHUTDOWN_REQ
+  sysPacket.action = 2; 
   radio.stopListening();
   radio.write(&sysPacket, sizeof(sysPacket));
 
-  // 2. Attesa del Feedback dal Pi (ACK)
   unsigned long startTime = millis();
   bool feedbackReceived = false;
   radio.startListening();
 
-  // Timeout di 20 secondi
   while (millis() - startTime < 20000) { 
-    updateRGBLED(); // Mantiene vivo il lampeggio arancione!
-    
+    updateRGBLED(); 
     if (radio.available()) {
       uint8_t response;
       radio.read(&response, sizeof(response));
-      if (response == 0xFF) { // Codice "Spento" dal Pi
+      if (response == 0xFF) { 
         feedbackReceived = true;
         break;
       }
@@ -224,107 +230,112 @@ void safeShutdownSequence() {
 
   display.clearDisplay();
   display.setCursor(0, 20);
-  if (feedbackReceived) {
-    display.println("PI 5 SPENTO SICURO.");
-  } else {
-    display.println("TIMEOUT RASPI!");
-    display.println("Forzatura OFF...");
-  }
+  if (feedbackReceived) display.println("  PI 5 SPENTO SICURO");
+  else display.println("  TIMEOUT! Forza OFF");
   display.display();
   delay(2000);
 
-  // 3. Taglio dell'alimentazione generale
-  sysPacket.action = 3; // FORCE_OFF
+  sysPacket.action = 3; 
   radio.stopListening();
   radio.write(&sysPacket, sizeof(sysPacket));
   
   robotPower = false;
   isShuttingDown = false;
-  currentScreen = 0; // Torna al benvenuto
-}
-
-void handleMenuButtons() {
-  // Scorri a Destra
-  if (digitalRead(PIN_DX) == LOW) {
-    currentScreen = (currentScreen + 1) % TOTAL_SCREENS;
-    while(digitalRead(PIN_DX) == LOW) { updateRGBLED(); delay(10); }
-  }
-  // Scorri a Sinistra
-  if (digitalRead(PIN_SX) == LOW) {
-    currentScreen = (currentScreen - 1 + TOTAL_SCREENS) % TOTAL_SCREENS;
-    while(digitalRead(PIN_SX) == LOW) { updateRGBLED(); delay(10); }
-  }
-  // Tasto OK (Cambia impostazione)
-  if (digitalRead(PIN_OK) == LOW) {
-    if (currentScreen == 1) {
-      driveMode = !driveMode;
-    } else if (currentScreen == 2) {
-      audioMode = !audioMode;
-    }
-    while(digitalRead(PIN_OK) == LOW) { updateRGBLED(); delay(10); }
-  }
+  currentScreen = 0; 
 }
 
 void sendJoystickData() {
   joyPacket.x = analogRead(PIN_JOY_X);
   joyPacket.y = analogRead(PIN_JOY_Y);
-  
   radio.stopListening();
   radio.write(&joyPacket, sizeof(joyPacket));
 }
 
 // ==========================================
-// FUNZIONI GRAFICHE E VISIVE (Display / LED)
+// FUNZIONI GRAFICHE E UI (RE-DESIGN)
 // ==========================================
+
+// Funzione helper per disegnare le opzioni selezionabili
+void drawOption(int x, int y, int width, const char* text, bool isSelected) {
+  if (isSelected) {
+    display.fillRoundRect(x, y, width, 14, 3, WHITE); // Sfondo bianco arrotondato
+    display.setTextColor(BLACK, WHITE);               // Testo nero
+  } else {
+    display.drawRoundRect(x, y, width, 14, 3, WHITE); // Solo contorno bianco
+    display.setTextColor(WHITE, BLACK);               // Testo bianco
+  }
+  
+  // Centra il testo nel box in modo approssimativo
+  int textWidth = strlen(text) * 6;
+  int textX = x + (width - textWidth) / 2;
+  display.setCursor(textX, y + 3);
+  display.print(text);
+  
+  display.setTextColor(WHITE, BLACK); // Resetta colore base
+}
 
 void updateDisplay() {
   display.clearDisplay();
-  display.setCursor(0, 0);
 
-  // Intestazione
+  // --- TOP BAR FISSA ---
+  display.setCursor(0, 0);
   if(robotPower) {
-    display.println("Stato: CONNESSO (ON)");
+    display.print(" ROBOT: ON");
   } else {
-    display.println("Stato: STANDBY");
+    display.print(" ROBOT: OFF");
   }
+  
+  // Lettura e stampa batteria in alto a destra
+  float voltage = analogRead(PIN_BATT) * (3.3 / 4095.0) * 2.0; 
+  display.setCursor(95, 0);
+  display.print(voltage, 1); display.print("V");
+  
   display.drawLine(0, 10, 128, 10, WHITE);
 
-  // Corpo della schermata
-  display.setCursor(0, 20);
+  // --- CORPO CENTRALE ---
   switch (currentScreen) {
-    case 0: // Welcome
-      display.println("   --- PRONTO ---");
-      display.println(" Premi ON per avviare");
+    
+    case 0: // STANDBY
+      display.setCursor(20, 30);
+      display.println("Premi [ON/OFF]");
+      display.setCursor(20, 45);
+      display.println("per iniziare");
       break;
+
+    case 1: // CONFIGURAZIONE 1: GUIDA
+      display.setCursor(15, 15);
+      display.println("1/2: SCELTA GUIDA");
       
-    case 1: // Guida
-      display.println("MODALITA' GUIDA:");
-      display.setCursor(0, 40);
-      display.setTextSize(2);
-      if (driveMode == 0) display.println(" MANUALE");
-      else display.println(" AUTONOMA");
-      display.setTextSize(1);
+      // Disegna i due bottoni (X, Y, Larghezza, Testo, Selezionato)
+      drawOption(5, 30, 118, "GUIDA MANUALE", (driveMode == 0));
+      drawOption(5, 48, 118, "IA AUTONOMA", (driveMode == 1));
       break;
+
+    case 2: // CONFIGURAZIONE 2: AUDIO
+      display.setCursor(15, 15);
+      display.println("2/2: SCELTA AUDIO");
       
-    case 2: // Audio
-      display.println("MODALITA' AUDIO:");
-      display.setCursor(0, 40);
-      if (audioMode == 0) display.println("> MIC ROBOT");
-      else display.println("> PTT TELECOMANDO");
+      drawOption(5, 30, 118, "MIC SUL ROBOT", (audioMode == 0));
+      drawOption(5, 48, 118, "PTT TELECOMANDO", (audioMode == 1));
       break;
+
+    case 3: // CRUSCOTTO OPERATIVO (DASHBOARD)
+      display.setCursor(15, 15);
+      display.println("--- CRUSCOTTO ---");
       
-    case 3: // Batteria
-      // Regola questo calcolo in base al tuo partitore di tensione!
-      float rawADC = analogRead(PIN_BATT);
-      float voltage = rawADC * (3.3 / 4095.0) * 2.0; // Moltiplicatore d'esempio
+      display.setCursor(5, 30);
+      display.print("Mod: ");
+      display.println(driveMode == 0 ? "MANUALE" : "AUTONOMA");
       
-      display.println("STATO BATTERIA:");
-      display.setCursor(0, 40);
-      display.setTextSize(2);
-      display.print(voltage); display.println(" V");
-      display.setTextSize(1);
+      display.setCursor(5, 42);
+      display.print("Aud: ");
+      display.println(audioMode == 0 ? "MIC ROBOT" : "PTT LOCALE");
+      
+      display.setCursor(25, 55);
+      display.print("[OK] x Impostazioni");
       break;
   }
+  
   display.display();
 }
 
@@ -339,25 +350,23 @@ void updateRGBLED() {
   unsigned long currentMillis = millis();
 
   if (isShuttingDown) {
-    // FASE SPEGNIMENTO: Lampeggio Arancione Veloce
-    if ((currentMillis / 150) % 2 == 0) {
-      setLEDColor(255, 80, 0); // Arancione
-    } else {
-      setLEDColor(0, 0, 0);
-    }
+    if ((currentMillis / 150) % 2 == 0) setLEDColor(255, 80, 0); 
+    else setLEDColor(0, 0, 0);
   } 
   else if (!robotPower) {
-    // STANDBY: Effetto "Respiro" Blu scuro
     int breath = (sin(currentMillis / 500.0) + 1) * 127.5; 
     setLEDColor(0, 0, breath); 
   } 
   else {
-    // ROBOT ACCESO
-    if (currentScreen == 1 && driveMode == 1) {
-      // IA Autonoma: Viola Fisso
+    if (currentScreen == 1 || currentScreen == 2) {
+      // Fase di setup: Azzurro fisso
+      setLEDColor(0, 150, 255);
+    }
+    else if (currentScreen == 3 && driveMode == 1) {
+      // IA Autonoma Operativa: Viola Fisso
       setLEDColor(150, 0, 255);
     } else {
-      // Manuale / Generale: Verde Fisso
+      // Manuale Operativo: Verde Fisso
       setLEDColor(0, 200, 0);
     }
   }
