@@ -1,0 +1,52 @@
+
+FUNZIONALITA' TELECOMANDO GPT-E
+
+	1. Accensione Hardware (Il Risveglio)
+
+		Azione: Premi il pulsante Power sul telecomando.
+
+		Flusso: L'ESP32 del telecomando invia un singolo impulso tramite la radio nRF24L01.
+		
+		Risultato: Il circuito ricevente sul robot capta il segnale, fa scattare l'alimentazione principale e il Raspberry Pi 5 inizia ad avviarsi.
+
+	2. Connessione (La Rete)
+
+		Azione: Il Raspberry Pi 5 completa il boot.
+
+		Flusso: Il Pi 5 attiva una sua rete Wi-Fi (Hotspot). L'ESP32 del telecomando rileva la rete e si connette automaticamente.
+
+		Risultato: Il display OLED del telecomando si aggiorna mostrando "Connesso" ed entra nel menu operativo.
+
+	3. Operatività: Menu OLED e Flussi Dati (Il Wi-Fi prende il comando)
+
+		Tramite i 3 pulsanti (SX, DX, OK) navighi sul display OLED del telecomando per impostare due parametri fondamentali:
+
+		Gestione Audio (Microfono INMP441):
+
+			Sempre in ascolto: Il flusso audio viene inviato continuamente via Wi-Fi (UDP) al Pi 5.
+
+			Push-To-Talk (PTT): L'audio viene inviato via Wi-Fi solo mentre tieni premuto l'apposito pulsante.
+
+		Gestione Guida:
+
+			Manuale: L'ESP32 legge i valori del Joystick (assi X e Y) e li invia in tempo reale al Pi 5 via Wi-Fi.
+
+			Autonoma: L'ESP32 smette di inviare i dati del Joystick (o avvisa il Pi 5 di ignorarli) per lasciare il controllo all'Intelligenza Artificiale a bordo del robot.
+
+	4. Esecuzione dei Movimenti (La Catena di Comando)
+
+		Il Raspberry Pi 5 funge sempre da "Cervello Centrale", elaborando le decisioni (sia che arrivino dal tuo joystick, sia che derivino dalla sua IA).
+
+		Flusso: Raspberry Pi 5 ➔ (Cavo Seriale UART) ➔ ESP32 "Testa" sul robot.
+
+		Risultato: L'ESP32 nella testa riceve i comandi puliti dal Pi 5 e muove fisicamente i servomotori con precisione.
+
+	5. Spegnimento Sicuro (Soft + Hard Shutdown)
+
+		Azione: Premi nuovamente il pulsante Power sul telecomando.
+
+		Flusso Software (Soft): L'ESP32 invia il comando "SHUTDOWN" via Wi-Fi. Il Raspberry Pi 5 esegue l'arresto sicuro del sistema operativo (Linux).
+
+		Controllo (Il trucco del Wi-Fi): L'ESP32 del telecomando rimane in attesa e si accorge quando la rete Wi-Fi del Pi 5 scompare definitivamente. Aspetta altri 3 secondi di margine.
+
+		Flusso Hardware (Hard): L'ESP32 usa la radio nRF24L01 per inviare il segnale di "apertura circuito" al modulo ricevente, staccando fisicamente la batteria del robot per non scaricarla.

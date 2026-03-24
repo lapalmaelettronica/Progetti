@@ -1,0 +1,296 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;\f2\fswiss\fcharset0 Helvetica-Oblique;
+}
+{\colortbl;\red255\green255\blue255;\red109\green109\blue109;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c50196\c50196\c50196;\cssrgb\c0\c0\c0;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid101\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid2}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 \
+\pard\pardeftab720\sa321\partightenfactor0
+
+\f1\b\fs48 \cf0 \strokec3 \uc0\u55357 \u56536  GUIDA SETUP TRADUTTORE AI (Pi Zero 2 + ESP32)\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 Versione OS:
+\f0\b0  Raspberry Pi OS Lite (64-bit) - 
+\f2\i Bookworm
+\f0\i0 \
+
+\f1\b Python:
+\f0\b0  3.11 (Nessuna compilazione pesante richiesta)\
+\pard\pardeftab720\partightenfactor0
+\cf2 \strokec2 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 \strokec3 1. Preparazione Sistema e Dipendenze \uc0\u55357 \u57056 \u65039 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 Appena installato il sistema e collegato in SSH (ssh palma01@raspizero.local), esegui questi comandi in ordine.\
+
+\f1\b A. Aggiorna e installa i tool (incluso CMake!)
+\f0\b0 \
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+sudo apt update && sudo apt upgrade -y\
+sudo apt install git python3-pip libopenblas-dev libatlas-base-dev screen cmake -y\
+\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b \cf0 B. Aumenta la SWAP a 2GB (Sicurezza)
+\f0\b0 \
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+sudo nano /etc/dphys-swapfile\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Cambia la riga in: CONF_SWAPSIZE=2048\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Salva (CTRL+O, Invio, CTRL+X)\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Applica: sudo /etc/init.d/dphys-swapfile restart\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b \cf0 C. Configura la Porta Seriale (Comunicazione ESP32)
+\f0\b0 \
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+sudo raspi-config\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls2\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Vai su 
+\f1\b Interface Options
+\f0\b0  -> 
+\f1\b Serial Port
+\f0\b0 .\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 "Would you like a login shell...?" -> 
+\f1\b NO
+\f0\b0 .\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	3	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 "Would you like the serial port hardware...?" -> 
+\f1\b YES
+\f0\b0 .\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	4	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Esci e 
+\f1\b RIAVVIA
+\f0\b0  (sudo reboot).\
+\pard\pardeftab720\partightenfactor0
+\cf2 \strokec2 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 \strokec3 2. Installazione Librerie Python \uc0\u55357 \u56333 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 Dopo il riavvio, rientra in SSH.\
+Python 3.11 ha gi\'e0 i file pronti, quindi sar\'e0 veloce.\
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+# 1. Fix per processore Pi Zero 2 (Evita "Illegal Instruction")\
+echo "export OPENBLAS_CORETYPE=ARMV8" >> ~/.bashrc\
+source ~/.bashrc\
+\
+# 2. Installa le librerie AI e Audio\
+pip3 install "numpy<2.0.0" argostranslate librosa soundfile --break-system-packages --no-cache-dir\
+\pard\pardeftab720\partightenfactor0
+\cf2 \strokec2 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 \strokec3 3. Installazione Whisper (L'Orecchio) \uc0\u55357 \u56386 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 Scarichiamo e compiliamo il riconoscitore vocale leggero (C++).\
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+cd ~\
+git clone https://github.com/ggerganov/whisper.cpp.git\
+cd whisper.cpp\
+\
+# Compila (ora che hai cmake, funzioner\'e0 subito)\
+make\
+\
+# Scarica il modello ottimizzato\
+./models/download-ggml-model.sh tiny-q5_1\
+\pard\pardeftab720\partightenfactor0
+\cf2 \strokec2 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 \strokec3 4. I Script Python \uc0\u55357 \u56541 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0\fs24 \cf0 Ora creiamo i due file che fanno funzionare tutto.\
+Torna alla cartella base: cd ~\
+\pard\pardeftab720\sa319\partightenfactor0
+
+\f1\b \cf0 FILE A: installa_lingue.py (Scarica i dizionari)\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0 \cf0 Crea il file: nano installa_lingue.py\
+Incolla questo codice:\
+\pard\pardeftab720\partightenfactor0
+\cf0 Python\
+\
+from argostranslate import package\
+print("\uc0\u9203  Aggiornamento indici dei dizionari...")\
+package.update_package_index()\
+available_packages = package.get_available_packages()\
+\
+# ELENCO LINGUE DA SCARICARE (Modifica se vuoi)\
+lingue = ["it", "en", "es", "fr", "de"] \
+\
+print(f"\uc0\u11015 \u65039   Cerco pacchetti per: \{lingue\}")\
+for p in available_packages:\
+    if p.from_code in lingue and p.to_code in lingue:\
+        print(f"\uc0\u55357 \u56550  Installazione: \{p.from_code\} -> \{p.to_code\} ...")\
+        p.install()\
+print("\uc0\u9989  Tutti i dizionari installati!")\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 Salva e chiudi (CTRL+O, Invio, CTRL+X).\
+\pard\pardeftab720\sa319\partightenfactor0
+
+\f1\b \cf0 FILE B: ricevitore.py (Il Cervello Principale)\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\b0 \cf0 Crea il file: nano ricevitore.py\
+Incolla questo codice (Aggiornato per Bookworm):\
+\pard\pardeftab720\partightenfactor0
+\cf0 Python\
+\
+import serial, wave, os, subprocess, time, struct\
+import argostranslate.package, argostranslate.translate\
+\
+# --- CONFIGURAZIONE ---\
+SERIAL_PORT = '/dev/serial0'    \
+BAUD_RATE = 921600              \
+AUDIO_FILE = "temp_audio.wav"\
+\
+# Percorsi aggiornati\
+WHISPER_DIR = "/home/palma01/whisper.cpp"\
+MODEL_PATH = f"\{WHISPER_DIR\}/models/ggml-tiny-q5_1.bin"\
+EXECUTABLE = f"\{WHISPER_DIR\}/main"  # L'eseguibile si chiama 'main'\
+\
+# Parametri Audio\
+SAMPLE_RATE = 16000; CHANNELS = 2; WIDTH = 2; SILENCE_LIMIT = 1.5      \
+SRC_LANG = "it"; TGT_LANG = "en" \
+\
+def calcola_volume(data):\
+    """Calcola il volume medio per attivare la registrazione"""\
+    try:\
+        count = len(data) // 2\
+        shorts = struct.unpack(f'<\{count\}h', data)\
+        return max(abs(s) for s in shorts)\
+    except: return 0\
+\
+def trascrivi(filename, lingua):\
+    """Usa Whisper C++ per trascrivere l'audio"""\
+    # -nt: no timestamps, -l: lingua\
+    cmd = [EXECUTABLE, "-m", MODEL_PATH, "-f", filename, "-nt", "-l", lingua, "--no-timestamps"]\
+    try:\
+        res = subprocess.run(cmd, capture_output=True, text=True)\
+        return res.stdout.strip()\
+    except Exception as e: return f"Err Trascrizione: \{e\}"\
+\
+def traduci(testo, src, tgt):\
+    """Usa Argos Translate offline"""\
+    if src == tgt: return testo\
+    try: return argostranslate.translate.translate(testo, src, tgt)\
+    except: return f"[Err Traduzione]"\
+\
+def main():\
+    global SRC_LANG, TGT_LANG\
+    print(f"--- \uc0\u55357 \u56960  SISTEMA ATTIVO: \{SRC_LANG\} -> \{TGT_LANG\} ---")\
+    \
+    try: \
+        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)\
+        ser.flushInput()\
+    except: \
+        print(f"\uc0\u10060  ERRORE SERIALE: Verifica di aver abilitato la seriale con raspi-config"); return\
+\
+    frames = []; recording = False; last_data_time = 0\
+    \
+    while True:\
+        if ser.in_waiting > 0:\
+            peek = ser.read(ser.in_waiting)\
+            \
+            # --- GESTIONE COMANDI (Cambio Lingua) ---\
+            if len(peek) < 50 and b"CONF:" in peek:\
+                try:\
+                    cmd_str = peek.decode('utf-8', errors='ignore').strip()\
+                    if "CONF:" in cmd_str:\
+                        # Formato: CONF:it>en\
+                        parti = cmd_str.split("CONF:")[1].split(">")\
+                        SRC_LANG = parti[0].strip(); TGT_LANG = parti[1].strip()\
+                        print(f"\uc0\u9989  Cambio Lingua: \{SRC_LANG\} -> \{TGT_LANG\}")\
+                        frames = []; recording = False; continue\
+                except: pass\
+\
+            # --- RILEVAMENTO VOCE (VOX) ---\
+            vol = calcola_volume(peek)\
+            if not recording and vol > 500: # Soglia sensibilit\'e0\
+                print(f"\uc0\u55356 \u57252  Voce rilevata (\{SRC_LANG\})..."); recording = True; frames = []\
+            \
+            if recording: \
+                frames.append(peek); last_data_time = time.time()\
+        else:\
+            # --- ELABORAZIONE (Dopo il silenzio) ---\
+            if recording and (time.time() - last_data_time > SILENCE_LIMIT):\
+                print("\uc0\u9209 \u65039   Fine frase. Elaborazione...")\
+                recording = False\
+                if len(frames) < 5: continue \
+\
+                # 1. Salva WAV\
+                with wave.open(AUDIO_FILE, 'wb') as wf:\
+                    wf.setnchannels(CHANNELS); wf.setsampwidth(WIDTH); wf.setframerate(SAMPLE_RATE)\
+                    wf.writeframes(b''.join(frames))\
+                \
+                # 2. Trascrivi (Whisper)\
+                orig = trascrivi(AUDIO_FILE, SRC_LANG)\
+                print(f"\uc0\u55357 \u56803 \u65039  [Udito]: \{orig\}")\
+                \
+                if len(orig) > 1:\
+                    # 3. Traduci (Argos)\
+                    trad = traduci(orig, SRC_LANG, TGT_LANG)\
+                    print(f"\uc0\u10024  [Tradotto]: \{trad\}")\
+                    \
+                    # 4. Invia risultato (UART)\
+                    msg = f"TXT:\{trad\}\\n"\
+                    ser.write(msg.encode('utf-8'))\
+                    ser.flushInput()\
+\
+if __name__ == "__main__": main()\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 Salva e chiudi (CTRL+O, Invio, CTRL+X).\
+\pard\pardeftab720\partightenfactor0
+\cf2 \strokec2 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 \strokec3 5. Avvio \uc0\u55357 \u56960 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\fs24 \cf0 Passo 1: Scarica le lingue (Fallo una volta)
+\f0\b0 \
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+python3 installa_lingue.py\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b \cf0 Passo 2: Avvia il Traduttore
+\f0\b0 \
+\pard\pardeftab720\partightenfactor0
+\cf0 Bash\
+\
+python3 ricevitore.py\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 Se vedi la scritta --- \uc0\u55357 \u56960  SISTEMA ATTIVO ---, hai finito! \u55356 \u57286 \
+}
