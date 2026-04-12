@@ -6016,12 +6016,6 @@
 		(uuid "738f37be-309a-46b3-b445-11137d950a56")
 	)
 	(junction
-		(at 179.07 165.1)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "73e11428-5e57-4d5a-b7a1-23bb967a29bb")
-	)
-	(junction
 		(at 217.17 101.6)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -15631,73 +15625,6 @@
 			(project "Head"
 				(path "/8e7ed3f4-22e2-435a-8dca-0a06eeede200"
 					(reference "C6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 179.07 165.1 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "aa884ddd-f235-426c-b5c2-c53bcd2daf3d")
-		(property "Reference" "TP9"
-			(at 177.546 159.766 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TestPoint"
-			(at 181.61 163.0679 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_D1.5mm"
-			(at 184.15 165.1 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 184.15 165.1 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "test point"
-			(at 179.07 165.1 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "04532ef6-d4d0-4e14-a219-a93c5fb96f56")
-		)
-		(instances
-			(project "Head"
-				(path "/8e7ed3f4-22e2-435a-8dca-0a06eeede200"
-					(reference "TP9")
 					(unit 1)
 				)
 			)
