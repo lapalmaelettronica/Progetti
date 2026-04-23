@@ -12681,15 +12681,15 @@
 			(uuid "d446f845-1180-4dae-91d4-2577ce05bc8f")
 		)
 		(embedded_fonts no)
-		(model "${KICAD9_3DMODEL_DIR}/RF_Module.3dshapes/nRF24L01_Breakout.step"
+		(model "/Users/lorenzopalmato/Desktop/Documenti/Progetti/STEP_Personal component/RF NRF24L01 2.4Ghz.stp"
 			(offset
-				(xyz 0 0 0)
+				(xyz 13.5 -5.5 3)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 0 0 0)
+				(xyz 90 -180 180)
 			)
 		)
 	)

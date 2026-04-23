@@ -510,7 +510,7 @@
       "plot": "../../../../../FILE PRODUZIONE/",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "../../../../../PowerManagement_GPT-E.step",
       "svg": "",
       "vrml": ""
     },

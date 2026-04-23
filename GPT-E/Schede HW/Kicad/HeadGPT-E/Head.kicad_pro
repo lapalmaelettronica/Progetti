@@ -506,7 +506,7 @@
       "plot": "../../../FILE PRODUZIONE/",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "../../STEP/PCBs/Head.step",
       "svg": "",
       "vrml": ""
     },
