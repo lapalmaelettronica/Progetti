@@ -132,29 +132,23 @@ void setEyesColor(int r, int g, int b) {
     int greenVal = 4095 - map(g, 0, 255, 0, 4095);
     int blueVal  = 4095 - map(b, 0, 255, 0, 4095);
 
-    // Mapping temporaneo di debug basato sui tuoi test:
-    // red logico -> canale che fisicamente accende verde
-    // green logico -> per ora disabilitato perché sembra morto/spento
-    // blue logico -> canale blu fisico
+    // Occhio sinistro
+    pwm.setPWM(3, 0, redVal);    // R sx
+    pwm.setPWM(4, 0, greenVal);  // G sx
+    pwm.setPWM(5, 0, blueVal);   // B sx
 
-    pwm.setPWM(0, 0, redVal);
+    // Occhio destro
+    pwm.setPWM(9, 0, redVal);    // R dx
+    pwm.setPWM(10, 0, greenVal); // G dx
+    pwm.setPWM(11, 0, blueVal);  // B dx
+
+    // Spegne canali non usati per gli occhi
+    pwm.setPWM(0, 0, 4095);
     pwm.setPWM(1, 0, 4095);
-    pwm.setPWM(2, 0, blueVal);
-
-    pwm.setPWM(3, 0, redVal);
-    pwm.setPWM(4, 0, 4095);
-    pwm.setPWM(5, 0, blueVal);
-
-    for (int i = 6; i <= 11; i++) {
-        pwm.setPWM(i, 0, 4095);
-    }
-
-    Serial.print("setEyesColor r=");
-    Serial.print(r);
-    Serial.print(" g=");
-    Serial.print(g);
-    Serial.print(" b=");
-    Serial.println(b);
+    pwm.setPWM(2, 0, 4095);
+    pwm.setPWM(6, 0, 4095);
+    pwm.setPWM(7, 0, 4095);
+    pwm.setPWM(8, 0, 4095);
 }
 
 void moveServo(int ch, int angle) {
