@@ -38,8 +38,8 @@
         "other_text_upright": false,
         "pads": {
           "drill": 0.0,
-          "height": 1.8,
-          "width": 3.5
+          "height": 2.0,
+          "width": 2.0
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -58,7 +58,20 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        [
+          "items_not_allowed|208100000|118422946|fd4b182c-e499-469b-b685-5a770d2e8552|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "items_not_allowed|214188860|116398974|d5011508-68f6-4621-b0bd-b0dd362ece5c|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "items_not_allowed|216860000|116820000|281d82e1-8161-4ad9-8782-938b69773f9e|00000000-0000-0000-0000-000000000000",
+          ""
+        ]
+      ],
       "meta": {
         "version": 2
       },
@@ -508,7 +521,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "../../../../../FILE PRODUZIONE/",
+      "plot": "../../FILE PRODUZIONE/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "../../../../../PowerManagement_GPT-E.step",

@@ -19,6 +19,7 @@ PROJECT_DIR="$HOME/GPT-E"
 APP_DIR="$PROJECT_DIR/app"
 SERVICE_CORE="gpte-core.service"
 SERVICE_BRAIN="gpte.service"
+SERVICE_CONTROL="gpte-control.service"
 
 echo "== GPT-E installer v2 =="
 echo "Project dir: $PROJECT_DIR"
@@ -62,27 +63,94 @@ pip install -r "$PROJECT_DIR/requirements.txt"
 # ------------------------------------------------------------
 echo "[4/9] Creo/aggiorno file .env senza sovrascrivere la API key..."
 
+prompt_secret() {
+    local label="$1"
+    local default_value="$2"
+    local value=""
+
+    if [ -t 0 ]; then
+        read -r -s -p "$label" value
+        echo ""
+    fi
+
+    if [ -z "$value" ]; then
+        value="$default_value"
+    fi
+
+    printf '%s' "$value"
+}
+
+generate_local_token() {
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -hex 32
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 -c 'import secrets; print(secrets.token_hex(32))'
+    else
+        date +%s%N | awk '{ print "gpte-local-token-" $1 }'
+    fi
+}
+
+replace_env_var() {
+    local key="$1"
+    local value="$2"
+    local file="$3"
+    local tmp_file
+
+    if grep -q "^$key=" "$file"; then
+        tmp_file="$(mktemp)"
+        awk -v key="$key" -v value="$value" '
+            index($0, key "=") == 1 { print key "=" value; next }
+            { print }
+        ' "$file" > "$tmp_file"
+        mv "$tmp_file" "$file"
+    else
+        echo "$key=$value" >> "$file"
+    fi
+}
+
+OPENAI_API_KEY_VALUE="INSERISCI_LA_TUA_CHIAVE_OPENAI"
+GPTE_CORE_TOKEN_VALUE="$(generate_local_token)"
+
+if [ -t 0 ]; then
+    echo "Inserisci la chiave OpenAI se ce l'hai ora. Premi INVIO per configurarla dopo."
+    OPENAI_API_KEY_VALUE="$(prompt_secret 'OPENAI_API_KEY: ' "$OPENAI_API_KEY_VALUE")"
+fi
+
 if [ ! -f "$PROJECT_DIR/.env" ]; then
-cat > "$PROJECT_DIR/.env" <<'ENV'
-OPENAI_API_KEY=INSERISCI_LA_TUA_CHIAVE_OPENAI
-GPTE_CORE_TOKEN=cambia-questo-token
-GPTE_CORE_HOST=127.0.0.1
-GPTE_CORE_PORT=8765
-GPTE_BRAIN_HOST=127.0.0.1
-GPTE_BRAIN_PORT=8766
-GPTE_SERIAL_PORT=/dev/serial0
-GPTE_SERIAL_BAUD=115200
-GPTE_MODEL=gpt-4o-mini
-GPTE_TTS_MODEL=tts-1
-GPTE_TTS_VOICE=onyx
-ENV
-echo "Creato $PROJECT_DIR/.env — ricordati di inserire OPENAI_API_KEY e cambiare GPTE_CORE_TOKEN."
+{
+    printf 'OPENAI_API_KEY=%s\n' "$OPENAI_API_KEY_VALUE"
+    printf 'GPTE_CORE_TOKEN=%s\n' "$GPTE_CORE_TOKEN_VALUE"
+    printf 'GPTE_CORE_HOST=127.0.0.1\n'
+    printf 'GPTE_CORE_PORT=8765\n'
+    printf 'GPTE_BRAIN_HOST=127.0.0.1\n'
+    printf 'GPTE_BRAIN_PORT=8766\n'
+    printf 'GPTE_CONTROL_PORT=5000\n'
+    printf 'GPTE_SERIAL_PORT=/dev/serial0\n'
+    printf 'GPTE_SERIAL_BAUD=115200\n'
+    printf 'GPTE_MODEL=gpt-4o-mini\n'
+    printf 'GPTE_TTS_MODEL=tts-1\n'
+    printf 'GPTE_TTS_VOICE=onyx\n'
+} > "$PROJECT_DIR/.env"
+echo "Creato $PROJECT_DIR/.env. Token locale generato automaticamente."
 else
-    grep -q '^GPTE_CORE_TOKEN=' "$PROJECT_DIR/.env" || echo 'GPTE_CORE_TOKEN=cambia-questo-token' >> "$PROJECT_DIR/.env"
+    current_openai_key="$(grep '^OPENAI_API_KEY=' "$PROJECT_DIR/.env" | head -n 1 | cut -d= -f2- || true)"
+    current_core_token="$(grep '^GPTE_CORE_TOKEN=' "$PROJECT_DIR/.env" | head -n 1 | cut -d= -f2- || true)"
+
+    if [ -z "$current_openai_key" ] || [ "$current_openai_key" = "INSERISCI_LA_TUA_CHIAVE_OPENAI" ]; then
+        replace_env_var "OPENAI_API_KEY" "$OPENAI_API_KEY_VALUE" "$PROJECT_DIR/.env"
+    fi
+
+    if [ -z "$current_core_token" ] || [ "$current_core_token" = "cambia-questo-token" ]; then
+        replace_env_var "GPTE_CORE_TOKEN" "$GPTE_CORE_TOKEN_VALUE" "$PROJECT_DIR/.env"
+        echo "GPTE_CORE_TOKEN generato automaticamente."
+    fi
+
+    grep -q '^GPTE_CORE_TOKEN=' "$PROJECT_DIR/.env" || echo "GPTE_CORE_TOKEN=$GPTE_CORE_TOKEN_VALUE" >> "$PROJECT_DIR/.env"
     grep -q '^GPTE_CORE_HOST=' "$PROJECT_DIR/.env" || echo 'GPTE_CORE_HOST=127.0.0.1' >> "$PROJECT_DIR/.env"
     grep -q '^GPTE_CORE_PORT=' "$PROJECT_DIR/.env" || echo 'GPTE_CORE_PORT=8765' >> "$PROJECT_DIR/.env"
     grep -q '^GPTE_BRAIN_HOST=' "$PROJECT_DIR/.env" || echo 'GPTE_BRAIN_HOST=127.0.0.1' >> "$PROJECT_DIR/.env"
     grep -q '^GPTE_BRAIN_PORT=' "$PROJECT_DIR/.env" || echo 'GPTE_BRAIN_PORT=8766' >> "$PROJECT_DIR/.env"
+    grep -q '^GPTE_CONTROL_PORT=' "$PROJECT_DIR/.env" || echo 'GPTE_CONTROL_PORT=5000' >> "$PROJECT_DIR/.env"
     grep -q '^GPTE_SERIAL_PORT=' "$PROJECT_DIR/.env" || echo 'GPTE_SERIAL_PORT=/dev/serial0' >> "$PROJECT_DIR/.env"
     grep -q '^GPTE_SERIAL_BAUD=' "$PROJECT_DIR/.env" || echo 'GPTE_SERIAL_BAUD=115200' >> "$PROJECT_DIR/.env"
     grep -q '^GPTE_MODEL=' "$PROJECT_DIR/.env" || echo 'GPTE_MODEL=gpt-4o-mini' >> "$PROJECT_DIR/.env"
@@ -797,6 +865,59 @@ if __name__ == "__main__":
     main()
 PY
 
+cat > "$PROJECT_DIR/control_service.py" <<'PY'
+import os
+import shutil
+import subprocess
+import time
+
+from dotenv import load_dotenv
+from flask import Flask, jsonify
+
+from core_client import get_state
+
+load_dotenv()
+
+CONTROL_PORT = int(os.getenv("GPTE_CONTROL_PORT", "5000"))
+SHUTDOWN_BIN = os.getenv("GPTE_SHUTDOWN_BIN") or shutil.which("shutdown") or "/usr/sbin/shutdown"
+
+app = Flask(__name__)
+started_at = time.time()
+
+
+def core_snapshot() -> dict:
+    try:
+        return get_state()
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+@app.get("/")
+@app.get("/health")
+def health():
+    return jsonify({
+        "ok": True,
+        "service": "gpte-control",
+        "uptime_s": int(time.time() - started_at),
+        "core": core_snapshot(),
+    })
+
+
+@app.get("/shutdown")
+def shutdown():
+    # Risponde subito al telecomando, poi systemd/sudo esegue lo spegnimento pulito.
+    cmd = ["sudo", SHUTDOWN_BIN, "-h", "now"]
+    try:
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return jsonify({"ok": True, "message": "shutdown_started"})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=CONTROL_PORT, debug=False)
+PY
+
 cat > "$PROJECT_DIR/brain_service.py" <<'PY'
 import os
 import json
@@ -1185,6 +1306,9 @@ PY
 # ------------------------------------------------------------
 echo "[7/9] Creo servizi systemd..."
 
+SHUTDOWN_BIN="$(command -v shutdown || echo /usr/sbin/shutdown)"
+grep -q '^GPTE_SHUTDOWN_BIN=' "$PROJECT_DIR/.env" || echo "GPTE_SHUTDOWN_BIN=$SHUTDOWN_BIN" >> "$PROJECT_DIR/.env"
+
 cat > "$PROJECT_DIR/gpte-core.service" <<EOF
 [Unit]
 Description=GPT-E Core Serial State Manager
@@ -1227,6 +1351,30 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
+sudo tee "/etc/systemd/system/$SERVICE_CONTROL" > /dev/null <<EOF
+[Unit]
+Description=Servizio Controllo Telecomando GPT-E
+After=network.target gpte-core.service
+Requires=gpte-core.service
+
+[Service]
+User=$USER
+WorkingDirectory=$PROJECT_DIR
+EnvironmentFile=$PROJECT_DIR/.env
+ExecStart=$PROJECT_DIR/env/bin/python $PROJECT_DIR/control_service.py
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "$USER ALL=(root) NOPASSWD: $SHUTDOWN_BIN -h now" | sudo tee /etc/sudoers.d/gpte-shutdown > /dev/null
+sudo chmod 440 /etc/sudoers.d/gpte-shutdown
+sudo visudo -cf /etc/sudoers.d/gpte-shutdown
+
 # ------------------------------------------------------------
 # 8. Abilita servizi
 # ------------------------------------------------------------
@@ -1234,9 +1382,11 @@ echo "[8/9] Abilito e avvio servizi..."
 sudo systemctl daemon-reload
 sudo systemctl enable "$SERVICE_CORE"
 sudo systemctl enable "$SERVICE_BRAIN"
+sudo systemctl enable "$SERVICE_CONTROL"
 sudo systemctl restart "$SERVICE_CORE"
 sleep 2
 sudo systemctl restart "$SERVICE_BRAIN"
+sudo systemctl restart "$SERVICE_CONTROL"
 
 # ------------------------------------------------------------
 # 9. Test helper
@@ -1244,11 +1394,20 @@ sudo systemctl restart "$SERVICE_BRAIN"
 echo "[9/9] Creo script test helper..."
 
 cat > "$PROJECT_DIR/test_status.py" <<'PY'
+import json
+import urllib.request
+
 from core_client import get_state
 from brain_client import brain_health
 
 print("CORE:", get_state())
 print("BRAIN:", brain_health())
+
+try:
+    with urllib.request.urlopen("http://127.0.0.1:5000/health", timeout=5) as response:
+        print("CONTROL:", json.loads(response.read().decode("utf-8")))
+except Exception as exc:
+    print("CONTROL:", {"ok": False, "error": str(exc)})
 PY
 
 cat > "$PROJECT_DIR/test_servo.py" <<'PY'
@@ -1290,17 +1449,98 @@ for t in tests:
     print("GPT-E:", ask_brain(t))
 PY
 
+cat > "$PROJECT_DIR/gpte_help.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_DIR="$HOME/GPT-E"
+ENV_FILE="$PROJECT_DIR/.env"
+
+service_state() {
+    local service="$1"
+    if systemctl is-active --quiet "$service"; then
+        echo "OK"
+    else
+        echo "NON ATTIVO"
+    fi
+}
+
+env_value() {
+    local key="$1"
+    if [ -f "$ENV_FILE" ]; then
+        grep "^$key=" "$ENV_FILE" | head -n 1 | cut -d= -f2- || true
+    fi
+}
+
+openai_key="$(env_value OPENAI_API_KEY)"
+robot_ip="$(hostname -I 2>/dev/null | awk '{ print $1 }')"
+
+echo ""
+echo "================ GPT-E: COSA FARE ADESSO ================"
+echo ""
+echo "Stato servizi:"
+echo "  Core UART/ESP32:       $(service_state gpte-core.service)"
+echo "  Brain AI/TTS:          $(service_state gpte.service)"
+echo "  Telecomando porta 5000: $(service_state gpte-control.service)"
+echo ""
+
+if [ -n "$robot_ip" ]; then
+    echo "IP Raspberry rilevato: $robot_ip"
+    echo "Il telecomando deve puntare all'IP configurato nel firmware."
+    echo ""
+fi
+
+if [ -z "$openai_key" ] || [ "$openai_key" = "INSERISCI_LA_TUA_CHIAVE_OPENAI" ]; then
+    echo "Manca OPENAI_API_KEY."
+    echo "1. Apri il file:"
+    echo "   nano $ENV_FILE"
+    echo "2. Sostituisci OPENAI_API_KEY=INSERISCI_LA_TUA_CHIAVE_OPENAI"
+    echo "3. Riavvia il brain:"
+    echo "   sudo systemctl restart gpte.service"
+else
+    echo "OPENAI_API_KEY configurata."
+fi
+
+echo ""
+echo "Comandi utili:"
+echo "  Stato completo: cd $PROJECT_DIR && source env/bin/activate && python test_status.py"
+echo "  Chat manuale:   cd $PROJECT_DIR && source env/bin/activate && python chat_cli.py"
+echo "  Log live:       journalctl -u gpte-core.service -u gpte.service -u gpte-control.service -f"
+echo "  Riavvia tutto:  sudo systemctl restart gpte-core.service gpte.service gpte-control.service"
+echo ""
+echo "Dal telecomando:"
+echo "  Power ON  -> accensione hardware robot"
+echo "  Porta 5000 -> controllo pronto/shutdown Raspberry"
+echo "  Porta 5001 -> audio TTS verso ESP32 testa"
+echo ""
+echo "=========================================================="
+SH
+chmod +x "$PROJECT_DIR/gpte_help.sh"
+
+cat > "$PROJECT_DIR/LEGGIMI_PRIMA.txt" <<TXT
+GPT-E installato.
+
+Per capire subito cosa fare:
+
+cd ~/GPT-E
+./gpte_help.sh
+
+Il token interno GPTE_CORE_TOKEN e' stato generato automaticamente.
+Di solito devi solo inserire OPENAI_API_KEY se non l'hai messa durante l'installazione.
+TXT
+
 echo ""
 echo "============================================================"
 echo "INSTALLAZIONE SISTEMA GPT-E COMPLETATA"
 echo "============================================================"
-echo "1) Controlla .env:"
+echo "1) Guida rapida:"
+echo "   cd $PROJECT_DIR && ./gpte_help.sh"
+echo ""
+echo "2) Se durante l'installazione hai premuto INVIO, inserisci solo OPENAI_API_KEY nel file .env:"
 echo "   nano $PROJECT_DIR/.env"
 echo ""
-echo "2) Inserisci OPENAI_API_KEY e cambia GPTE_CORE_TOKEN."
-echo ""
 echo "3) Riavvia:"
-echo "   sudo systemctl restart gpte-core.service gpte.service"
+echo "   sudo systemctl restart gpte-core.service gpte.service gpte-control.service"
 echo ""
 echo "4) Verifica:"
 echo "   cd $PROJECT_DIR && source env/bin/activate && python test_status.py"
@@ -1311,4 +1551,5 @@ echo ""
 echo "Log:"
 echo "   journalctl -u gpte-core.service -f"
 echo "   journalctl -u gpte.service -f"
+echo "   journalctl -u gpte-control.service -f"
 echo "============================================================"

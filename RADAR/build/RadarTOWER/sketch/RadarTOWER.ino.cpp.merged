@@ -1,0 +1,632 @@
+#include <Arduino.h>
+#line 1 "/Users/lorenzopalmato/Desktop/Documenti/Progetti/RADAR/Software/RadarTOWER/RadarTOWER.ino"
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ESP32Servo.h>
+
+// ================= NODE CONFIG =================
+#define NODE_ID 1
+#define NODE_NAME "Radar 1"
+
+const char* WIFI_SSID = "RadarESP32";
+const char* WIFI_PASS = "12345678";
+const char* CENTRAL_IP = "192.168.4.1";
+
+// ================= MODES =================
+#define MODE_AUTO   0
+#define MODE_MANUAL 1
+#define MODE_TARGET 2
+
+// ================= PIN =================
+#define SERVO_PIN        4
+#define TRIG_PIN         5
+#define ECHO_PIN         6
+#define BUZZER_PIN       7
+#define SERVO_POWER_PIN  10
+
+#define LED_R_PIN        0
+#define LED_G_PIN        1
+#define LED_B_PIN        3
+
+Servo radarServo;
+
+// ================= PARAMETRI =================
+const int ANGLE_MIN = 10;
+const int ANGLE_MAX = 170;
+const int ANGLE_STEP = 1;
+
+const int DIST_MIN = 2;
+const int DIST_MAX = 200;
+const int DETECT_DISTANCE = 30;
+const int DETECT_CONFIRM_READS = 2;
+const int DETECT_DISTANCE_TOLERANCE_CM = 18;
+
+// target tracking
+const int TRACK_WIDTH = 14;
+const int TRACK_STEP = 1;
+const int TARGET_CENTER_MAX_STEP = 4;
+const int LOST_SWEEPS_LIMIT = 3;
+
+// ================= COMANDI DA CENTRAL =================
+bool radarRunning = true;
+int radarMode = MODE_AUTO;
+int scanDelayMs = 25;
+int manualAngle = 90;
+int targetRangeCm = 50;
+
+// ================= STATO =================
+bool servoPowered = false;
+
+int scanAngle = ANGLE_MIN;
+int scanDirection = 1;
+
+bool targetLocked = false;
+int targetCenter = 90;
+int trackOffset = -TRACK_WIDTH;
+int trackDirection = 1;
+int bestAngle = 90;
+long bestDistance = 999;
+long targetAngleSum = 0;
+int targetHitCount = 0;
+bool foundInSweep = false;
+int lostSweeps = 0;
+
+unsigned long lastCmdPoll = 0;
+unsigned long lastWifiCheck = 0;
+unsigned long lastBuzzerTime = 0;
+unsigned long lastLedBlinkTime = 0;
+
+bool buzzerState = false;
+bool greenLedState = false;
+
+int sendCounter = 0;
+const int SEND_EVERY_STEPS = 1;
+
+long lastRawDetection = -1;
+int confirmedDetectionCount = 0;
+
+// ================= RGB =================
+
+void setRGB(bool r, bool g, bool b) {
+  digitalWrite(LED_R_PIN, r ? HIGH : LOW);
+  digitalWrite(LED_G_PIN, g ? HIGH : LOW);
+  digitalWrite(LED_B_PIN, b ? HIGH : LOW);
+}
+
+void rgbOff() {
+  setRGB(false, false, false);
+}
+
+void rgbRed() {
+  setRGB(true, false, false);
+}
+
+void rgbGreen() {
+  setRGB(false, true, false);
+}
+
+void rgbBlue() {
+  setRGB(false, false, true);
+}
+
+void rgbPurple() {
+  setRGB(true, false, true);
+}
+
+void rgbYellow() {
+  setRGB(true, true, false);
+}
+
+void rgbScanBlink() {
+  unsigned long now = millis();
+
+  if (now - lastLedBlinkTime >= 400) {
+    lastLedBlinkTime = now;
+    greenLedState = !greenLedState;
+
+    if (greenLedState) rgbGreen();
+    else rgbOff();
+  }
+}
+
+// ================= BUZZER =================
+
+void buzzerOff() {
+  digitalWrite(BUZZER_PIN, LOW);
+  buzzerState = false;
+}
+
+void updateBuzzer(long distance) {
+  if (distance < 0 || distance > DETECT_DISTANCE) {
+    buzzerOff();
+    return;
+  }
+
+  unsigned long now = millis();
+
+  int intervalMs = map(
+    constrain(distance, 5, DETECT_DISTANCE),
+    5,
+    DETECT_DISTANCE,
+    60,
+    300
+  );
+
+  if (now - lastBuzzerTime >= intervalMs) {
+    lastBuzzerTime = now;
+    buzzerState = !buzzerState;
+    digitalWrite(BUZZER_PIN, buzzerState ? HIGH : LOW);
+  }
+}
+
+void handleFeedback(long distance) {
+  if (WiFi.status() != WL_CONNECTED) {
+    rgbPurple();
+    buzzerOff();
+    return;
+  }
+
+  if (!radarRunning) {
+    rgbBlue();
+    buzzerOff();
+    return;
+  }
+
+  if (targetLocked) {
+    rgbYellow();
+    updateBuzzer(distance);
+    return;
+  }
+
+  if (distance > 0 && distance <= DETECT_DISTANCE) {
+    rgbRed();
+    updateBuzzer(distance);
+  } else {
+    rgbScanBlink();
+    buzzerOff();
+  }
+}
+
+// ================= SERVO POWER =================
+
+void servoPowerOn() {
+  if (servoPowered) return;
+
+  digitalWrite(SERVO_POWER_PIN, HIGH);
+  delay(500);
+
+  radarServo.setPeriodHertz(50);
+  radarServo.attach(SERVO_PIN, 500, 2400);
+  radarServo.write(90);
+  delay(500);
+
+  servoPowered = true;
+}
+
+void servoPowerOff() {
+  if (!servoPowered) return;
+
+  radarServo.detach();
+  pinMode(SERVO_PIN, INPUT);
+  delay(30);
+
+  digitalWrite(SERVO_POWER_PIN, LOW);
+  servoPowered = false;
+}
+
+// ================= HC-SR04 =================
+
+long readDistanceCm() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(3);
+
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  unsigned long duration = pulseIn(ECHO_PIN, HIGH, 8500);
+
+  if (duration == 0) return -1;
+
+  long distance = duration / 58;
+
+  if (distance < DIST_MIN || distance > DIST_MAX) return -1;
+
+  return distance;
+}
+
+// ================= WIFI =================
+
+void connectWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return;
+
+  Serial.print("Connessione a ");
+  Serial.println(WIFI_SSID);
+
+  rgbPurple();
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+  unsigned long startAttempt = millis();
+
+  while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 8000) {
+    delay(250);
+    Serial.print(".");
+  }
+
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("WiFi connesso");
+    Serial.print("IP nodo: ");
+    Serial.println(WiFi.localIP());
+    rgbBlue();
+    delay(400);
+  } else {
+    Serial.println("WiFi NON connesso");
+    rgbPurple();
+  }
+}
+
+void checkWiFiReconnect() {
+  unsigned long now = millis();
+
+  if (now - lastWifiCheck < 3000) return;
+  lastWifiCheck = now;
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi perso, riconnessione...");
+    WiFi.disconnect();
+    connectWiFi();
+  }
+}
+
+// ================= PARSE COMMAND =================
+
+int getCmdInt(String payload, String key, int currentValue) {
+  String token = key + "=";
+  int start = payload.indexOf(token);
+
+  if (start < 0) return currentValue;
+
+  start += token.length();
+
+  int end = payload.indexOf(';', start);
+  if (end < 0) end = payload.length();
+
+  return payload.substring(start, end).toInt();
+}
+
+void applyCommand(String payload) {
+  bool oldRunning = radarRunning;
+  int oldMode = radarMode;
+
+  radarRunning = getCmdInt(payload, "running", radarRunning ? 1 : 0) == 1;
+  radarMode = constrain(getCmdInt(payload, "mode", radarMode), 0, 2);
+  scanDelayMs = constrain(getCmdInt(payload, "speed", scanDelayMs), 15, 120);
+  manualAngle = constrain(getCmdInt(payload, "manual", manualAngle), ANGLE_MIN, ANGLE_MAX);
+  targetRangeCm = constrain(getCmdInt(payload, "target", targetRangeCm), 20, 150);
+
+  if (oldMode != radarMode) {
+    targetLocked = false;
+    lostSweeps = 0;
+    trackOffset = -TRACK_WIDTH;
+    bestDistance = 999;
+    foundInSweep = false;
+  }
+
+  if (oldRunning != radarRunning && !radarRunning) {
+    targetLocked = false;
+  }
+}
+
+void fetchCommand() {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  unsigned long now = millis();
+  if (now - lastCmdPoll < 120) return;
+  lastCmdPoll = now;
+
+  String url = "http://";
+  url += CENTRAL_IP;
+  url += "/cmd?id=";
+  url += NODE_ID;
+
+  HTTPClient http;
+  http.setTimeout(120);
+  http.begin(url);
+
+  int code = http.GET();
+
+  if (code == 200) {
+    String payload = http.getString();
+    applyCommand(payload);
+  }
+
+  http.end();
+}
+
+// ================= SEND DATA =================
+
+void sendRadarData(int angle, long distance) {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  bool valid = distance > 0;
+
+  String url = "http://";
+  url += CENTRAL_IP;
+  url += "/update?id=";
+  url += NODE_ID;
+  url += "&angle=";
+  url += angle;
+  url += "&distance=";
+  url += distance;
+  url += "&valid=";
+  url += valid ? "1" : "0";
+  url += "&locked=";
+  url += targetLocked ? "1" : "0";
+
+  HTTPClient http;
+  http.setTimeout(120);
+  http.begin(url);
+
+  int code = http.GET();
+
+  if (code <= 0) {
+    Serial.print("Errore invio: ");
+    Serial.println(code);
+  }
+
+  http.end();
+}
+
+// ================= MEASURE =================
+
+long filterDetection(long rawDistance) {
+  if (rawDistance <= 0) {
+    confirmedDetectionCount = 0;
+    lastRawDetection = -1;
+    return -1;
+  }
+
+  if (lastRawDetection > 0 &&
+      abs(rawDistance - lastRawDetection) <= DETECT_DISTANCE_TOLERANCE_CM) {
+    confirmedDetectionCount++;
+  } else {
+    confirmedDetectionCount = 1;
+  }
+
+  lastRawDetection = rawDistance;
+
+  if (confirmedDetectionCount < DETECT_CONFIRM_READS) {
+    return -1;
+  }
+
+  return rawDistance;
+}
+
+long measureAtAngle(int angle) {
+  servoPowerOn();
+
+  angle = constrain(angle, ANGLE_MIN, ANGLE_MAX);
+
+  radarServo.write(angle);
+  delay(scanDelayMs);
+
+  long rawDistance = readDistanceCm();
+  long distance = filterDetection(rawDistance);
+
+  Serial.print("Mode:");
+  Serial.print(radarMode);
+  Serial.print(" Run:");
+  Serial.print(radarRunning);
+  Serial.print(" A:");
+  Serial.print(angle);
+  Serial.print(" D:");
+
+  if (distance < 0) {
+    Serial.print("--");
+    if (rawDistance > 0) {
+      Serial.print(" raw:");
+      Serial.print(rawDistance);
+    }
+  } else {
+    Serial.print(distance);
+  }
+
+  Serial.print(" TargetLock:");
+  Serial.println(targetLocked);
+
+  handleFeedback(distance);
+
+  sendCounter++;
+
+  if (sendCounter >= SEND_EVERY_STEPS) {
+    sendCounter = 0;
+    sendRadarData(angle, distance);
+  }
+
+  return distance;
+}
+
+// ================= AUTO MODE =================
+
+void advanceAutoAngle() {
+  scanAngle += ANGLE_STEP * scanDirection;
+
+  if (scanAngle >= ANGLE_MAX) {
+    scanAngle = ANGLE_MAX;
+    scanDirection = -1;
+  }
+
+  if (scanAngle <= ANGLE_MIN) {
+    scanAngle = ANGLE_MIN;
+    scanDirection = 1;
+  }
+}
+
+void stepAutoMode() {
+  long d = measureAtAngle(scanAngle);
+  advanceAutoAngle();
+}
+
+// ================= MANUAL MODE =================
+
+void stepManualMode() {
+  long d = measureAtAngle(manualAngle);
+}
+
+// ================= TARGET MODE =================
+
+void resetTargetSearch() {
+  trackOffset = -TRACK_WIDTH;
+  trackDirection = 1;
+  bestDistance = 999;
+  bestAngle = targetCenter;
+  targetAngleSum = 0;
+  targetHitCount = 0;
+  foundInSweep = false;
+}
+
+void stepTargetMode() {
+  if (!targetLocked) {
+    long d = measureAtAngle(scanAngle);
+
+    if (d > 0 && d <= targetRangeCm) {
+      targetLocked = true;
+      targetCenter = scanAngle;
+      bestAngle = scanAngle;
+      bestDistance = d;
+      lostSweeps = 0;
+      resetTargetSearch();
+
+      Serial.println("TARGET LOCK ACQUIRED");
+    }
+
+    advanceAutoAngle();
+    return;
+  }
+
+  int angle = constrain(targetCenter + trackOffset, ANGLE_MIN, ANGLE_MAX);
+  long d = measureAtAngle(angle);
+
+  if (d > 0 && d <= targetRangeCm) {
+    foundInSweep = true;
+    targetAngleSum += angle;
+    targetHitCount++;
+
+    if (bestDistance == 999 || d < bestDistance) {
+      bestDistance = d;
+      bestAngle = angle;
+    }
+  }
+
+  trackOffset += TRACK_STEP * trackDirection;
+
+  bool sweepEnded = false;
+
+  if (trackOffset >= TRACK_WIDTH) {
+    trackOffset = TRACK_WIDTH;
+    trackDirection = -1;
+    sweepEnded = true;
+  }
+
+  if (trackOffset <= -TRACK_WIDTH) {
+    trackOffset = -TRACK_WIDTH;
+    trackDirection = 1;
+    sweepEnded = true;
+  }
+
+  if (sweepEnded) {
+    if (foundInSweep) {
+      int averageAngle = targetHitCount > 0 ? targetAngleSum / targetHitCount : bestAngle;
+      int centerDelta = averageAngle - targetCenter;
+      centerDelta = constrain(centerDelta, -TARGET_CENTER_MAX_STEP, TARGET_CENTER_MAX_STEP);
+      targetCenter = constrain(targetCenter + centerDelta, ANGLE_MIN, ANGLE_MAX);
+      lostSweeps = 0;
+      Serial.print("TARGET CENTER UPDATED: ");
+      Serial.println(targetCenter);
+    } else {
+      lostSweeps++;
+      Serial.print("TARGET LOST SWEEP ");
+      Serial.println(lostSweeps);
+
+      if (lostSweeps >= LOST_SWEEPS_LIMIT) {
+        targetLocked = false;
+        resetTargetSearch();
+        Serial.println("TARGET LOCK LOST");
+      }
+    }
+
+    bestDistance = 999;
+    targetAngleSum = 0;
+    targetHitCount = 0;
+    foundInSweep = false;
+  }
+}
+
+// ================= SETUP =================
+
+void setup() {
+  Serial.begin(115200);
+  delay(500);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  pinMode(SERVO_POWER_PIN, OUTPUT);
+  digitalWrite(SERVO_POWER_PIN, LOW);
+
+  pinMode(LED_R_PIN, OUTPUT);
+  pinMode(LED_G_PIN, OUTPUT);
+  pinMode(LED_B_PIN, OUTPUT);
+
+  rgbOff();
+
+  Serial.println();
+  Serial.println("=== ESP32-C3 RADAR NODE V4 ===");
+  Serial.print("Node ID: ");
+  Serial.println(NODE_ID);
+  Serial.print("Node name: ");
+  Serial.println(NODE_NAME);
+
+  connectWiFi();
+
+  servoPowerOn();
+
+  Serial.println("Nodo pronto");
+}
+
+// ================= LOOP =================
+
+void loop() {
+  checkWiFiReconnect();
+  fetchCommand();
+
+  if (!radarRunning) {
+    servoPowerOff();
+    buzzerOff();
+    rgbBlue();
+
+    sendRadarData(manualAngle, -1);
+    delay(250);
+    return;
+  }
+
+  servoPowerOn();
+
+  if (radarMode == MODE_AUTO) {
+    targetLocked = false;
+    stepAutoMode();
+  } else if (radarMode == MODE_MANUAL) {
+    targetLocked = false;
+    stepManualMode();
+  } else if (radarMode == MODE_TARGET) {
+    stepTargetMode();
+  }
+}
+

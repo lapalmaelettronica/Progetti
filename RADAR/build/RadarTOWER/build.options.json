@@ -1,0 +1,9 @@
+{
+  "additionalFiles": "",
+  "compiler.optimization_flags": "-Os",
+  "customBuildProperties": "",
+  "fqbn": "esp32:esp32:esp32c3",
+  "hardwareFolders": "/Users/lorenzopalmato/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10,/Users/lorenzopalmato/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10",
+  "otherLibrariesFolders": "/Users/lorenzopalmato/Documents/Arduino/libraries",
+  "sketchLocation": "/Users/lorenzopalmato/Desktop/Documenti/Progetti/RADAR/Software/RadarTOWER"
+}
