@@ -152,32 +152,6 @@ void setActiveLowLedChannel(int ch, int value) {
     pwm.setPWM(ch, 0, offTick);
 }
 
-bool isEyeChannel(int ch) {
-    return ch == 3 || ch == 4 || ch == 5 || ch == 9 || ch == 10 || ch == 11;
-}
-
-void setAllEyeChannelsOff() {
-    setActiveLowLedChannel(3, 0);
-    setActiveLowLedChannel(4, 0);
-    setActiveLowLedChannel(5, 0);
-    setActiveLowLedChannel(9, 0);
-    setActiveLowLedChannel(10, 0);
-    setActiveLowLedChannel(11, 0);
-}
-
-void sendDebugEyeChannelState(int channel, int brightness) {
-    StaticJsonDocument<192> doc;
-    doc["type"] = "state";
-    doc["device"] = "debug_eye_channel";
-
-    JsonObject value = doc["value"].to<JsonObject>();
-    value["channel"] = channel;
-    value["brightness"] = brightness;
-
-    serializeJson(doc, Serial2);
-    Serial2.println();
-}
-
 void setEyesColor(int r, int g, int b) {
     r = constrain(r, 0, 255);
     g = constrain(g, 0, 255);
@@ -288,37 +262,6 @@ void handleJsonCommand(const String& cmd) {
         setEyesByColorName(String(color), brightness);
         sendAck(id, true);
         sendLedState(color, brightness);
-        return;
-    }
-
-    if (targetStr == "debug" && actionStr == "eye_channel") {
-        int channel = doc["args"]["channel"] | -1;
-        int brightness = doc["args"]["brightness"] | 0;
-
-        if (!isEyeChannel(channel)) {
-            sendAck(id, false, "invalid_eye_channel");
-            return;
-        }
-
-        if (brightness < 0 || brightness > 30) {
-            sendAck(id, false, "invalid_debug_brightness");
-            return;
-        }
-
-        setAllEyeChannelsOff();
-        if (brightness > 0) {
-            setActiveLowLedChannel(channel, brightness);
-        }
-
-        sendAck(id, true);
-        sendDebugEyeChannelState(channel, brightness);
-        return;
-    }
-
-    if (targetStr == "debug" && actionStr == "eyes_off") {
-        setAllEyeChannelsOff();
-        sendAck(id, true);
-        sendDebugEyeChannelState(-1, 0);
         return;
     }
 
