@@ -503,7 +503,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "../../../FILE PRODUZIONE/",
+      "plot": "../../FILE PRODUZIONE/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "../../STEP/PCBs/Head.step",
@@ -612,7 +612,7 @@
     "meta": {
       "version": 1
     },
-    "net_format_name": "",
+    "net_format_name": "KiCad",
     "page_layout_descr_file": "",
     "plot_directory": "",
     "space_save_all_events": true,
